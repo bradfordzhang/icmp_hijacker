@@ -16,11 +16,12 @@ var (
 	checkInterval time.Duration
 	maxFailures   int
 	logger        *zap.Logger
+	nowStatus     bool
 )
 
 func init() {
 	flag.StringVar(&targetURL, "url", "http://www.google.com/generate_204", "Target URL")
-	flag.DurationVar(&checkInterval, "interval", 5*time.Second, "Check interval(5s, 5m, 1h)")
+	flag.DurationVar(&checkInterval, "interval", 5*time.Second, "Check interval(5s, 5m, 1h	)")
 	flag.IntVar(&maxFailures, "max-failures", 3, "Allow maximum failures before disable ICMP response")
 
 	flag.Parse()
@@ -38,6 +39,7 @@ func init() {
 
 func main() {
 	failureCount := 0
+	nowStatus := false
 
 	logger.Info("Start monitoring",
 		zap.String("targetURL", targetURL),
@@ -52,11 +54,18 @@ func main() {
 			if failureCount >= maxFailures {
 				disableICMP()
 				logger.Warn("Reach max failures, disable ICMP response")
+				nowStatus = true
 				break
 			}
 		} else {
 			failureCount = 0
 			logger.Info("Connection success")
+			if nowStatus {
+				logger.Warn("Connection recover")
+				enableICMP()
+				nowStatus = false
+				break
+			}
 		}
 
 		time.Sleep(checkInterval)
@@ -80,10 +89,13 @@ func disableICMP() {
 		logger.Error("Close IPv4 ICMP response fail", zap.Error(err))
 		os.Exit(1)
 	}
-	cmd = exec.Command("sysctl", "-w", "net.ipv6.icmp_echo_ignore_all=1")
-	err = cmd.Run()
+}
+
+func enableICMP() {
+	cmd := exec.Command("sysctl", "-w", "net.ipv4.icmp_echo_ignore_all=0")
+	err := cmd.Run()
 	if err != nil {
-		logger.Error("Close IPv6 ICMP response fail", zap.Error(err))
+		logger.Error("Close IPv4 ICMP response fail", zap.Error(err))
 		os.Exit(1)
 	}
 }
