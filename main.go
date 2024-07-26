@@ -91,6 +91,8 @@ func monitorConnection(ctx context.Context, done chan<- bool) {
 					if err := disableICMP(); err == nil {
 						icmpDisabled = true
 						logger.Warn("达到最大失败次数,已禁用ICMP响应")
+					} else {
+						logger.Error("禁用ICMP响应失败", zap.Error(err))
 					}
 				}
 			} else {
@@ -100,13 +102,14 @@ func monitorConnection(ctx context.Context, done chan<- bool) {
 					if err := enableICMP(); err == nil {
 						icmpDisabled = false
 						logger.Warn("连接恢复,已启用ICMP响应")
+					} else {
+						logger.Error("启用ICMP响应失败", zap.Error(err))
 					}
 				}
 			}
 		}
 	}
 }
-
 func checkConnection() bool {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -121,19 +124,47 @@ func checkConnection() bool {
 }
 
 func disableICMP() error {
-	cmd := exec.Command("sysctl", "-w", "net.ipv4.icmp_echo_ignore_all=1")
-	if err := cmd.Run(); err != nil {
-		logger.Error("禁用IPv4 ICMP响应失败", zap.Error(err))
-		return err
+	cmds := []struct {
+		name string
+		args []string
+	}{
+		{"sysctl", []string{"-w", "net.ipv4.icmp_echo_ignore_all=1"}},
+		{"sysctl", []string{"-w", "net.ipv6.icmp.echo_ignore_all=1"}},
 	}
+
+	for _, cmd := range cmds {
+		if err := exec.Command(cmd.name, cmd.args...).Run(); err != nil {
+			logger.Error("禁用ICMP响应失败",
+				zap.String("command", cmd.name),
+				zap.Strings("args", cmd.args),
+				zap.Error(err))
+			return err
+		}
+	}
+
+	logger.Info("成功禁用IPv4和IPv6 ICMP响应")
 	return nil
 }
 
 func enableICMP() error {
-	cmd := exec.Command("sysctl", "-w", "net.ipv4.icmp_echo_ignore_all=0")
-	if err := cmd.Run(); err != nil {
-		logger.Error("启用IPv4 ICMP响应失败", zap.Error(err))
-		return err
+	cmds := []struct {
+		name string
+		args []string
+	}{
+		{"sysctl", []string{"-w", "net.ipv4.icmp_echo_ignore_all=0"}},
+		{"sysctl", []string{"-w", "net.ipv6.icmp.echo_ignore_all=0"}},
 	}
+
+	for _, cmd := range cmds {
+		if err := exec.Command(cmd.name, cmd.args...).Run(); err != nil {
+			logger.Error("启用ICMP响应失败",
+				zap.String("command", cmd.name),
+				zap.Strings("args", cmd.args),
+				zap.Error(err))
+			return err
+		}
+	}
+
+	logger.Info("成功启用IPv4和IPv6 ICMP响应")
 	return nil
 }
