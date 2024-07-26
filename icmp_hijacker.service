@@ -1,0 +1,25 @@
+[Unit]
+Description=ICMP Monitor Service
+After=network.target dae.service
+Wants=dae.service
+
+[Service]
+ExecStart=/usr/local/bin/icmp_hijacker
+Restart=always
+RestartSec=10
+User=root
+Group=root
+
+# 如果您的程序需要特定的环境变量,可以在这里设置
+# Environment=VAR1=value1 VAR2=value2
+
+# 如果您的程序需要特定的工作目录,可以在这里设置
+# WorkingDirectory=/path/to/working/directory
+
+# 安全相关设置
+ProtectSystem=full
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
