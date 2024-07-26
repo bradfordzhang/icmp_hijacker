@@ -33,6 +33,7 @@ func initConfig() {
 	flag.Parse()
 
 	zapConfig := zap.NewProductionConfig()
+	zapConfig.DisableCaller = true
 	zapConfig.EncoderConfig.TimeKey = "timestamp"
 	zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	var err error

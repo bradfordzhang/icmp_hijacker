@@ -1,27 +1,15 @@
 [Unit]
-Description=ICMP Monitor Service
-After=network.target dae.service
-Wants=dae.service
+Description=ICMP Hijacker
+After=network.target nss-lookup.target dae.service
 
 [Service]
-ExecStart=/usr/local/bin/icmp_hijacker
-Restart=always
-RestartSec=10
 User=nobody
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-ProtectSystem=full
-PrivateTmp=true
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
 NoNewPrivileges=true
-
-# 如果您的程序需要特定的环境变量,可以在这里设置
-# Environment=VAR1=value1 VAR2=value2
-
-# 如果您的程序需要特定的工作目录,可以在这里设置
-# WorkingDirectory=/path/to/working/directory
-
-# 安全相关设置
-
+ExecStart=/usr/local/bin/icmp_hijacker
+Restart=on-failure
+RestartPreventExitStatus=23
 
 [Install]
 WantedBy=multi-user.target
