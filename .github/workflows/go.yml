@@ -72,3 +72,13 @@ jobs:
         asset_path: ./icmp_hijacker-linux-arm64
         asset_name: icmp_hijacker-linux-arm64
         asset_content_type: application/octet-stream
+
+    - name: Upload Release Asset (Systemd service)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./icmp_hijacker.service
+        asset_name: icmp_hijacker.service
+        asset_content_type: application/octet-stream
